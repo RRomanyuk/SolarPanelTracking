@@ -146,7 +146,7 @@ bool nightAndWinterControl(int avgLight) {
     posHor = 100;
     verticalServo.write(posVer);
     horizontalServo.write(posHor);
-    delay(600);
+    delay(200);
     horizontalServo.write(90);
 
     t = 0;
@@ -161,9 +161,9 @@ int calculateVerticalStep(int valueTop, int valueBottom){
   if(abs(delta) < 100){
     return 0;
   } else if(abs(delta) > 1000){
-      step = (delta > 0) ? 15 : -15;
+      step = (delta > 0) ? -15 : 15;
   } else if(abs(delta) > 200){
-      step = (delta > 0) ? 10 : -10;
+      step = (delta > 0) ? -10 : 10;
   }
   return step;
 }
@@ -173,12 +173,13 @@ int calculateHorizontalStep(int valueLeft, int valueRight) {
 
   if (abs(delta) < 100) {
     return 90;
-  } else if (delta < 0) {
+  } else if (abs(delta) > 500) {
     return 80;
   } else {
     return 100;
   }
 }
+
 
 void runTracking(){
   int valTop = analogRead(LDR_TOP_PIN);
@@ -188,7 +189,7 @@ void runTracking(){
   int avgLight = (valTop + valBottom + valLeft + valRight) / 4;
   Blynk.virtualWrite(V4, avgLight);
   
-  if (!isAutoMode == 0) return;
+  if (isAutoMode != 0) return;
 
   if (!nightAndWinterControl(avgLight)) {
     return;
@@ -196,16 +197,15 @@ void runTracking(){
 
   Blynk.virtualWrite(V10, "Day Mode");
   int stepVer = calculateVerticalStep(valTop, valBottom);
-  posVer = constrain(posVer + stepVer, 0, 179);
+  posVer = constrain(posVer + stepVer, 0, 120);
   if (stepVer != 0) {
   verticalServo.write(posVer);
   }
 
   int stepHor = calculateHorizontalStep(valLeft, valRight);
   horizontalServo.write(stepHor);
-  
   if(stepHor != 90){
-    delay(500);
+    delay(100);
     horizontalServo.write(90);
   }
 }
@@ -219,12 +219,6 @@ void sendWiFiInfo() {
 
 BLYNK_WRITE(V9) {
   isAutoMode = param.asInt();  // Перемикач Авто/Ручне
-  if (isAutoMode == 0) {
-    verticalServo.write(90);
-    horizontalServo.write(80);
-    delay(500);
-    horizontalServo.write(90);
-  }
 }
 
 BLYNK_WRITE(V8) {  // Горизонтальне керування
