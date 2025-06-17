@@ -117,12 +117,13 @@ void setup() {
   
   WiFi.mode(WIFI_AP_STA);
   connectToWiFi();
-
   sendWiFiInfo();
-  timer.setInterval(2000L, runTracking);
 
   verticalServo.attach(SERVO_VERTICAL_PIN);
-  horizontalServo.attach(SERVO_HORIZONTAL_PIN); 
+  verticalServo.write(90);
+  horizontalServo.attach(SERVO_HORIZONTAL_PIN);
+
+  timer.setInterval(2000L, runTracking); 
 }
 
 bool nightAndWinterControl(int avgLight) {
@@ -171,15 +172,14 @@ int calculateVerticalStep(int valueTop, int valueBottom){
 int calculateHorizontalStep(int valueLeft, int valueRight) {
   int delta = valueLeft - valueRight;
 
-  if (abs(delta) < 100) {
+  if (abs(delta) < 500) {
     return 90;
-  } else if (abs(delta) > 500) {
+  } else if (delta > 0) {
     return 80;
-  } else {
+  } else if (delta < 0) {
     return 100;
   }
 }
-
 
 void runTracking(){
   int valTop = analogRead(LDR_TOP_PIN);
