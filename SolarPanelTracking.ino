@@ -69,6 +69,7 @@ void handleConnect() {
   } else {
       server.send(400, "text/html", "<h2>SSID or password is empty!</h2>");
     }
+  ESP.restart();
 }
 
 void connectToWiFi() {
@@ -81,7 +82,10 @@ void connectToWiFi() {
     Serial.println("Connecting to Wi-Fi...");
     WiFi.begin(ssid.c_str(), password.c_str());
 
-    while (WiFi.status() != WL_CONNECTED) {
+    unsigned long startAttemptTime = millis();
+    const unsigned long timeout = 5000;
+
+    while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < timeout) {
       delay(500);
       Serial.print(".");
     }
@@ -96,18 +100,22 @@ void connectToWiFi() {
       isWebServerEnabled = false;
       return;
     }
+
     Serial.println("\nConnection failed.");
+    WiFi.disconnect(true);
+    delay(1000);
   }
 
+  Serial.println("Starting access point...");
   WiFi.softAP("ESP32_Config", "12345678");
   IPAddress IP = WiFi.softAPIP();
-  Serial.print("\nWi-Fi config portal active. IP: ");
+  Serial.print("Wi-Fi config portal active. IP: ");
   Serial.println(IP);
 
   server.on("/", HTTP_GET, handleRoot);
   server.on("/connect", HTTP_POST, handleConnect);
   server.begin();
-
+  WiFi.disconnect(false);
   isWebServerEnabled = true;
 }
 
